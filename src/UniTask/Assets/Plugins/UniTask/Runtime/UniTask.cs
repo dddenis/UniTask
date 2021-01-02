@@ -126,6 +126,8 @@ namespace Cysharp.Threading.Tasks
             return new UniTask<AsyncUnit>(new AsyncUnitSource(this.source), this.token);
         }
 
+        public UniTask ConfigureAwait(bool continueOnCapturedContext) => this;
+
         sealed class AsyncUnitSource : IUniTaskSource<AsyncUnit>
         {
             readonly IUniTaskSource source;
@@ -476,6 +478,31 @@ namespace Cysharp.Threading.Tasks
             return (this.source == null) ? result?.ToString()
                  : "(" + this.source.UnsafeGetStatus() + ")";
         }
+
+        public int Id => Convert.ToInt32(token);
+
+        public UniTask<T> ConfigureAwait(bool continueOnCapturedContext) => this;
+
+        public T Result => GetAwaiter().GetResult();
+
+        public AggregateException Exception {
+            get {
+                try {
+                    GetAwaiter().GetResult();
+                }
+                catch (Exception exception) {
+                    return new AggregateException(exception);
+                }
+
+                return null;
+            }
+        }
+
+        public bool IsCanceled => Status.IsCanceled();
+
+        public bool IsCompleted => Status.IsCompleted();
+
+        public bool IsFaulted => Status.IsFaulted();
 
         sealed class IsCanceledSource : IUniTaskSource<(bool, T)>
         {
